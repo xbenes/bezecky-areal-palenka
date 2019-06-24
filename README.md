@@ -1,6 +1,7 @@
 # Running areal Palenka
 
 A very simple web page which contains the info about running areal Palenka tracks.
+Live at [https://xbenes.github.io/bezecky-areal-palenka/](https://xbenes.github.io/bezecky-areal-palenka/).
 
 ## Additional info
 
