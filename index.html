@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://api.mapy.cz/loader.js"></script>
+    <script>Loader.load()</script>
+
+    <!-- ie11 polyfill: NodeList.prototype.forEach, Array.prototype.find -->
+    <script src="ie11polyfills.js"></script>
+    <!-- ie11 polyfill: promise: https://www.npmjs.com/package/promise-polyfill -->
+    <script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"></script>
+    <!-- ie11 polyfill: fetch: https://www.npmjs.com/package/unfetch -->
+    <script src="https://unpkg.com/unfetch/polyfill"></script>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div class="content">
+        <div class="map" id="map"></div>
+        <div class="sidebar">
+            <div class="info-section logo shadowed"><img src="areal.jpg" /></div>
+            <div class="info-section button-group shadowed">
+                <div class="buttons"></div>
+            </div>
+            <div class="info-section text shadowed">
+                Barva ze stromů se už oprýskává a proto vznikly tyto stránky, které Vám zprostředkovávají
+                trasy zaznamenané pomocí GPS.
+                Trasy si můžete zobrazit nebo stáhnout jako gpx: <a href="tracks.zip">tracks.zip</a>.
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="script.js"></script>
+</body>
+</html>
