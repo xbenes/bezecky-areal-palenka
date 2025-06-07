@@ -9,6 +9,10 @@ The web page allows visitors to view individual tracks in the areal and also dow
 
 ## Technology
 
-The webpage is written using plain old javascript (polyfills needed for IE11). No js transpile, no css preprocessing. The page should run "as is".
+The webpage is written using plain old javascript. No js transpile, no css preprocessing. The page should run "as is".
 
-The web page uses [api.mapy.cz](https://api.mapy.cz/) to show tracks on a map.
+The web page uses [Leaflet.js](https://leafletjs.com/) library to show gpx tracks ([leaflet-gpx](https://github.com/mpetazzoni/leaflet-gpx) plugin) on a map generated from [OpenStreetMap](https://www.openstreetmap.org/) data.
+
+## Base tile layer images
+
+Generated mbtiles file from OpenStreetMap pbf with systemed/tilemaker. Then rendered mbtiles with maptiler/tileserver-gl and downloaded the output png for the particular limited region and zoom range.

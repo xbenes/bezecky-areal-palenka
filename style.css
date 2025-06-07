@@ -14,7 +14,7 @@ html, body {
     top: 10px;
     left: 10px;
     width: 240px;
-    z-index: 50;
+    z-index: 5000;
 }
 
 .shadowed {

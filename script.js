@@ -1,10 +1,26 @@
+(function () {
+
+// guess base to run universally on both localhost and github pages
+// and make sure it does not have trailing /
+var base = (window.location.pathname || '').replace(/\/$/, '');
+
 var htmlMapId = 'map'; // index.html binding
 var htmlButtonsGroupClass = 'buttons'; // index.html binding
 
+var minLon = 15.9988;
+var maxLon = 16.1130;
+var minLat = 50.4763;
+var maxLat = 50.5045;
+var minZoom = 13;
+var maxZoom = 15;
+var centerLat = (minLat + maxLat) / 2;
+var centerLon = (minLon + maxLon) / 2;
+var initZoom = 15;
+
 var initialMapConfig = {
-    x: 16.0549649,
-    y: 50.4876520,
-    zoom: 15
+    x: centerLon,
+    y: centerLat,
+    zoom: initZoom
 };
 
 var trackDefinitions = [
@@ -23,20 +39,37 @@ var buttonCreatorConfig = {
     activeClass: 'btn-dark'
 };
 
-var sMap = createMap(htmlMapId, initialMapConfig);
+var lMap = createMap(htmlMapId, initialMapConfig);
 
-addAllTracks(sMap, trackDefinitions).then(function(loadedTracks) {
-    createButtonsForLoadedTracks(loadedTracks, buttonCreatorConfig);
+addAllTracks(lMap, trackDefinitions).then(function(loadedTracks) {
+    createButtonsForLoadedTracks(lMap, loadedTracks, buttonCreatorConfig);
 });
 
 function createMap(elementId, mapConfig) {
-    var center = SMap.Coords.fromWGS84(mapConfig.x, mapConfig.y);
-    var map = new SMap(JAK.gel(elementId), center, mapConfig.zoom);
-    map.addControl(new SMap.Control.Sync());
-    map.addDefaultLayer(SMap.DEF_TURIST).enable();
+    var map = L.map('map', {
+        center: [centerLat, centerLon],
+        zoom: initZoom,
+        maxBoundsViscosity: 1.0
+    });
 
-    var mouse = new SMap.Control.Mouse(SMap.MOUSE_PAN | SMap.MOUSE_WHEEL | SMap.MOUSE_ZOOM);
-    map.addControl(mouse);
+    var corner1 = L.latLng(minLat, minLon);
+    var corner2 = L.latLng(maxLat, maxLon);
+    var bounds = L.latLngBounds(corner1, corner2);
+    map.setMaxBounds(bounds);
+    map.setMinZoom(minZoom);
+    map.setMaxZoom(maxZoom);
+
+    // this would render directly against openstreetmap servers
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+    L.tileLayer(base + '/tiles/512/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: maxZoom
+    }).addTo(map);
+
+    // map.on('click', function(e) {
+    //     console.log(`${e.latlng.lat} ${e.latlng.lng} ${map.getZoom()}`);
+    // });
 
     return map;
 }
@@ -53,44 +86,72 @@ function addTrack(map, track) {
     return fetch(track.filename).then(function(response) {
         return response.text();
     }).then(function(text) {
-        var xmlDoc = JAK.XML.createDocument(text);
-        var options = { colors:[ track.color ] };
-        var gpx = new SMap.Layer.GPX(xmlDoc, null, options);
-        map.addLayer(gpx);
+        var gpx = new L.GPX(text, {
+            markers: {
+                startIcon: undefined,
+                endIcon: undefined,
+                wptIcons: {},
+                wptTypeIcons: {},
+                pointMatchers: []
+            },
+            polyline_options: {
+                color: track.color,
+                weight: 4
+            },
+        });
+        var gpxOutline = new L.GPX(text, {
+            markers: {
+                startIcon: undefined,
+                endIcon: undefined,
+                wptIcons: {},
+                wptTypeIcons: {},
+                pointMatchers: []
+            },
+            polyline_options: {
+                color: "white",
+                weight: 9,
+                opacity: 0.8
+            },
+        });
+        gpxOutline.addTo(map);
+        gpx.addTo(map);
         return {
             gpx: gpx,
+            gpxOutline: gpxOutline,
             definition: track
         };
     });
 }
 
-function createButtonsForLoadedTracks(loadedTracks, buttonDOMConfig) {
+function createButtonsForLoadedTracks(map, loadedTracks, buttonDOMConfig) {
     var buttons = loadedTracks.map(function(loadedTrack) {
-        return addTrackButton(loadedTrack, loadedTracks, buttonDOMConfig);
+        return addTrackButton(map, loadedTrack, loadedTracks, buttonDOMConfig);
     });
 
-    switchTrack(loadedTracks[0], buttons[0], loadedTracks, buttonDOMConfig);
+    switchTrack(map, loadedTracks[0], buttons[0], loadedTracks, buttonDOMConfig);
 }
 
-function addTrackButton(loadedTrack, loadedTracks, buttonDOMConfig) {
+function addTrackButton(map, loadedTrack, loadedTracks, buttonDOMConfig) {
     return createButton(
         getHTMLTrackTitle(loadedTrack.definition),
         buttonDOMConfig,
         function(event) {
             var button = event.currentTarget;
-            switchTrack(loadedTrack, button, loadedTracks, buttonDOMConfig);
+            switchTrack(map, loadedTrack, button, loadedTracks, buttonDOMConfig);
         }
     );
 }
 
-function switchTrack(loadedTrack, trackButton, loadedTracks, buttonDOMConfig) {
-    activateTrack(loadedTrack, loadedTracks);
+function switchTrack(map, loadedTrack, trackButton, loadedTracks, buttonDOMConfig) {
+    activateTrack(map, loadedTrack, loadedTracks);
     activateButton(trackButton, buttonDOMConfig);
 }
 
-function activateTrack(loadedTrack, loadedTracks) {
-    loadedTracks.forEach(disableTrack);
-    enableTrack(loadedTrack);
+function activateTrack(map, loadedTrack, loadedTracks) {
+    loadedTracks.forEach(function(loadedTrack) {
+        disableTrack(map, loadedTrack);
+    });
+    enableTrack(map, loadedTrack);
 }
 
 function activateButton(button, buttonDOMConfig) {
@@ -119,12 +180,14 @@ function createButton(html, buttonDOMConfig, onClickFn) {
     return button;
 }
 
-function enableTrack(track) {
-    track.gpx.enable();
+function enableTrack(map, track) {
+    map.addLayer(track.gpxOutline);
+    map.addLayer(track.gpx);
 }
 
-function disableTrack(track) {
-    track.gpx.disable();
+function disableTrack(map, track) {
+    map.removeLayer(track.gpx);
+    map.removeLayer(track.gpxOutline);
 }
 
 function getHTMLTrackTitle(track) {
@@ -150,3 +213,5 @@ function joinWithSpace(firstClass, secondClass) {
 function dotPrefix(className) {
     return '.' + className;
 }
+
+})();
