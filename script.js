@@ -113,8 +113,6 @@ function addTrack(map, track) {
                 opacity: 0.8
             },
         });
-        gpxOutline.addTo(map);
-        gpx.addTo(map);
         return {
             gpx: gpx,
             gpxOutline: gpxOutline,
